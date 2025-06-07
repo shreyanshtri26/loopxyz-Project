@@ -1,99 +1,111 @@
-import React, { useEffect, useCallback } from 'react';
-import FilterDropdown from '../FilterDropdown/FilterDropdown';
-import DataTableComponent from '../DataTable/DataTable';
+import React, { useCallback, useMemo } from 'react';
 import { useData } from '../../context/DataContext';
-import { FilterOption } from '../../types';
+import { LoadingSpinner } from '../LoadingSpinner/LoadingSpinner';
+import { useFilter } from '../../hooks/useFilter';
+import { FilterDropdown } from '../FilterDropdown/FilterDropdown';
+import { DataTable } from '../DataTable/DataTable';
 import './Dashboard.css';
 
-interface DashboardProps {
-  useSmallDataset?: boolean;
-}
+export const Dashboard: React.FC = () => {
+  const { data, filters, setFilters, isLargeDataset, toggleDataset, loading, error } = useData();
+  const { filteredData, columnOptions } = useFilter(data, filters);
 
-const Dashboard: React.FC<DashboardProps> = ({ useSmallDataset = true }) => {
-  const { state, dispatch, loadData } = useData();
-  const { filteredData, filters, availableOptions, columns, isLargeDataset } = state;
+  // Memoize the filter change handler
+  const handleFilterChange = useCallback(
+    (column: string, values: string[]) => {
+      setFilters({ ...filters, [column]: values });
+    },
+    [filters, setFilters]
+  );
 
-  useEffect(() => {
-    // Load data when component mounts
-    loadData(!useSmallDataset);
-  }, [loadData, useSmallDataset]);
+  // Reset all filters
+  const resetFilters = useCallback(() => {
+    const emptyFilters = Object.keys(filters).reduce((acc, column) => {
+      acc[column] = [];
+      return acc;
+    }, {} as Record<string, string[]>);
+    setFilters(emptyFilters);
+  }, [filters, setFilters]);
 
-  const handleFilterSelect = useCallback((selectedList: FilterOption[], column: string) => {
-    dispatch({
-      type: 'UPDATE_FILTER',
-      payload: {
-        column,
-        values: selectedList.map(item => item.id),
-      },
-    });
-  }, [dispatch]);
+  // Memoize filter components to prevent unnecessary rerenders
+  const filterComponents = useMemo(() => {
+    const filterSections = Object.keys(filters).map(column => (
+      <div key={column} className="filter-section">
+        <h3>{column}</h3>
+        <FilterDropdown
+          column={column}
+          selectedValues={filters[column]}
+          columnOptions={columnOptions[column]}
+          onChange={handleFilterChange}
+        />
+      </div>
+    ));
 
-  const handleFilterRemove = useCallback((selectedList: FilterOption[], column: string) => {
-    dispatch({
-      type: 'UPDATE_FILTER',
-      payload: {
-        column,
-        values: selectedList.map(item => item.id),
-      },
-    });
-  }, [dispatch]);
+    return (
+      <div className="filters-sidebar">
+        <div className="filters-header">
+          <h2>Filters</h2>
+          <button onClick={resetFilters} className="dataset-toggle">Reset Filters</button>
+        </div>
+        <div className="filters-container">
+          {filterSections}
+        </div>
+      </div>
+    );
+  }, [filters, columnOptions, handleFilterChange, resetFilters]);
 
-  const handleResetFilters = useCallback(() => {
-    dispatch({ type: 'RESET_FILTERS' });
-  }, [dispatch]);
+  // Memoize result summary
+  const resultSummary = useMemo(() => (
+    <div className="results-summary">
+      Showing {filteredData.length} of {data.length} records
+    </div>
+  ), [filteredData.length, data.length]);
 
-  const handleDatasetToggle = useCallback(() => {
-    loadData(!isLargeDataset);
-  }, [loadData, isLargeDataset]);
+  // Memoize data table to prevent unnecessary rerenders
+  const dataTable = useMemo(() => (
+    <DataTable
+      data={filteredData}
+      pageSize={100}
+      virtualScrollSize={20}
+      loading={loading}
+    />
+  ), [filteredData, loading]);
+
+  // Show loading spinner during data loading
+  if (loading) {
+    return <LoadingSpinner size="large" message="Loading data..." />;
+  }
+
+  // Show error message if data loading failed
+  if (error) {
+    return (
+      <div className="error-container">
+        <h2>Error loading data</h2>
+        <p>{error}</p>
+        <button onClick={() => toggleDataset()} className="retry-button">
+          Try Again
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard">
       <div className="dashboard-header">
-        <h1>Business Intelligence Dashboard</h1>
-        <div className="dashboard-actions">
-          <button 
-            className="dataset-toggle" 
-            onClick={handleDatasetToggle}
-          >
-            Switch to {isLargeDataset ? 'Small' : 'Large'} Dataset
-          </button>
-          <button 
-            className="reset-filters" 
-            onClick={handleResetFilters}
-          >
-            Reset Filters
-          </button>
-        </div>
+        <h1>Data Analysis Dashboard</h1>
+        <button onClick={toggleDataset} className="dataset-toggle">
+          Switch to {isLargeDataset ? 'Small' : 'Large'} Dataset
+        </button>
       </div>
-      
+
       <div className="dashboard-content">
-        <div className="filters-section">
-          <h2>Filters</h2>
-          <div className="filters-container">
-            {columns.map(column => (
-              <FilterDropdown
-                key={column}
-                title={column}
-                options={availableOptions[column] || []}
-                selectedValues={filters[column] || []}
-                onSelect={(selectedList) => handleFilterSelect(selectedList, column)}
-                onRemove={(selectedList) => handleFilterRemove(selectedList, column)}
-              />
-            ))}
-          </div>
-        </div>
+        {filterComponents}
         
-        <div className="table-section">
-          <h2>Data Table</h2>
-          <p>Showing {filteredData.length} of {state.data.length} rows</p>
-          <DataTableComponent
-            data={filteredData}
-            columns={columns}
-          />
+        <div className="data-container">
+          {resultSummary}
+          {dataTable}
         </div>
       </div>
     </div>
   );
-};
-
-export default Dashboard; 
+}; 

@@ -11,10 +11,11 @@ export const parseCSV = (csv: string): DataRow[] => {
   
   return lines.slice(1).map(line => {
     const values = line.split(',');
-    return headers.reduce((obj: any, header, index) => {
-      obj[header] = values[index];
+    return headers.reduce((obj: Record<string, number>, header, index) => {
+      // Convert value to number since our DataRow requires numeric values
+      obj[header] = Number(values[index]);
       return obj;
-    }, {});
+    }, {} as Record<string, number>) as DataRow;
   });
 };
 

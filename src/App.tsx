@@ -1,15 +1,16 @@
 import React from 'react';
-import Dashboard from './components/Dashboard/Dashboard';
 import { DataProvider } from './context/DataContext';
+import { Dashboard } from './components/Dashboard/Dashboard';
+import { ErrorBoundary } from './components/ErrorBoundary/ErrorBoundary';
 import './App.css';
 
 const App: React.FC = () => {
   return (
-    <DataProvider>
-      <div className="app">
+    <ErrorBoundary>
+      <DataProvider>
         <Dashboard />
-      </div>
-    </DataProvider>
+      </DataProvider>
+    </ErrorBoundary>
   );
 };
 

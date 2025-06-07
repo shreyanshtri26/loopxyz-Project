@@ -1,164 +1,91 @@
-import React, { createContext, useContext, useReducer, useMemo, ReactNode } from 'react';
-import { DataContextState, DataRow, FiltersState, FilterOption, ActionType } from '../types';
-import { fetchCSV } from '../utils/csvParser';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
+import { DataRow, FiltersState, DataContextType } from '../types';
+import Papa from 'papaparse';
 
-// Initial state
-const initialState: DataContextState = {
-  data: [],
-  filteredData: [],
-  filters: {},
-  availableOptions: {},
-  columns: [],
-  isLargeDataset: false,
-};
+const DataContext = createContext<DataContextType | undefined>(undefined);
 
-// Reducer function
-const reducer = (state: DataContextState, action: ActionType): DataContextState => {
-  switch (action.type) {
-    case 'SET_DATA': {
-      const { data, isLargeDataset } = action.payload;
-      const columns = data.length > 0 ? Object.keys(data[0]).filter(key => key !== 'number') : [];
-      
-      // Initialize filters
-      const filters: FiltersState = {};
-      columns.forEach(column => {
-        filters[column] = [];
-      });
-      
-      // Get unique values for each column
-      const availableOptions: { [key: string]: FilterOption[] } = {};
-      columns.forEach(column => {
-        const uniqueValues = [...new Set(data.map(row => row[column as keyof DataRow]))];
-        availableOptions[column] = uniqueValues.map(value => ({
-          name: value,
-          id: value,
-        }));
-      });
-      
-      return {
-        ...state,
-        data,
-        filteredData: data,
-        filters,
-        columns,
-        availableOptions,
-        isLargeDataset,
-      };
-    }
-    
-    case 'UPDATE_FILTER': {
-      const { column, values } = action.payload;
-      const newFilters = { ...state.filters, [column]: values };
-      
-      // Filter data based on all filters
-      const filteredData = state.data.filter(row => {
-        return Object.entries(newFilters).every(([col, selectedValues]) => {
-          if (selectedValues.length === 0) return true;
-          return selectedValues.includes(row[col as keyof DataRow] as string);
-        });
-      });
-      
-      // Update available options for each column based on filtered data
-      const availableOptions: { [key: string]: FilterOption[] } = {};
-      state.columns.forEach(col => {
-        // Apply filters except the current column's filter
-        const dataFilteredByOtherColumns = state.data.filter(row => {
-          return Object.entries(newFilters).every(([filterCol, selectedValues]) => {
-            if (filterCol === col || selectedValues.length === 0) return true;
-            return selectedValues.includes(row[filterCol as keyof DataRow] as string);
-          });
-        });
-        
-        // Get unique values from filtered data
-        const uniqueValues = [...new Set(dataFilteredByOtherColumns.map(row => row[col as keyof DataRow]))];
-        availableOptions[col] = uniqueValues.map(value => ({
-          name: value,
-          id: value,
-        }));
-      });
-      
-      return {
-        ...state,
-        filters: newFilters,
-        filteredData,
-        availableOptions,
-      };
-    }
-    
-    case 'RESET_FILTERS': {
-      const resetFilters: FiltersState = {};
-      state.columns.forEach(column => {
-        resetFilters[column] = [];
-      });
-      
-      // Get unique values for each column from all data
-      const availableOptions: { [key: string]: FilterOption[] } = {};
-      state.columns.forEach(column => {
-        const uniqueValues = [...new Set(state.data.map(row => row[column as keyof DataRow]))];
-        availableOptions[column] = uniqueValues.map(value => ({
-          name: value,
-          id: value,
-        }));
-      });
-      
-      return {
-        ...state,
-        filters: resetFilters,
-        filteredData: state.data,
-        availableOptions,
-      };
-    }
-    
-    default:
-      return state;
-  }
-};
-
-// Create context
-const DataContext = createContext<{
-  state: DataContextState;
-  dispatch: React.Dispatch<ActionType>;
-  loadData: (isLarge: boolean) => Promise<void>;
-}>({
-  state: initialState,
-  dispatch: () => null,
-  loadData: async () => {},
-});
-
-// Provider component
-export const DataProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [state, dispatch] = useReducer(reducer, initialState);
-  
-  const loadData = async (isLarge: boolean) => {
-    const filePath = isLarge ? './data/dataset_large.csv' : './data/dataset_small.csv';
-    const data = await fetchCSV(filePath);
-    dispatch({ 
-      type: 'SET_DATA', 
-      payload: { 
-        data, 
-        isLargeDataset: isLarge 
-      } 
-    });
-  };
-  
-  const value = useMemo(() => ({
-    state,
-    dispatch,
-    loadData,
-  }), [state]);
-  
-  return (
-    <DataContext.Provider value={value}>
-      {children}
-    </DataContext.Provider>
-  );
-};
-
-// Custom hook to use the data context
 export const useData = () => {
   const context = useContext(DataContext);
   if (!context) {
     throw new Error('useData must be used within a DataProvider');
   }
   return context;
+};
+
+export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [data, setData] = useState<DataRow[]>([]);
+  const [filters, setFilters] = useState<FiltersState>({});
+  const [isLargeDataset, setIsLargeDataset] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Memoize setFilters to prevent unnecessary rerenders
+  const memoizedSetFilters = useCallback((newFilters: FiltersState) => {
+    setFilters(newFilters);
+  }, []);
+
+  // Use a worker for CSV parsing if the browser supports it
+  const parseCSV = useCallback((csvText: string) => {
+    return new Promise<Papa.ParseResult<DataRow>>((resolve) => {
+      Papa.parse(csvText, {
+        header: true,
+        dynamicTyping: true,
+        skipEmptyLines: true,
+        worker: true, // Use worker thread for better performance
+        complete: (results) => {
+          resolve(results as Papa.ParseResult<DataRow>);
+        }
+      });
+    });
+  }, []);
+
+  const loadData = useCallback(async (isLarge: boolean) => {
+    setLoading(true);
+    setError(null); // Clear any previous errors
+    
+    try {
+      const response = await fetch(isLarge ? '/data/dataset_large.csv' : '/data/dataset_small.csv');
+      const csvText = await response.text();
+      
+      const result = await parseCSV(csvText);
+      
+      setData(result.data);
+      
+      // Initialize filters based on columns
+      const initialFilters: FiltersState = {};
+      if (result.meta.fields) {
+        result.meta.fields.forEach((field: string) => {
+          initialFilters[field] = [];
+        });
+      }
+      setFilters(initialFilters);
+    } catch (error) {
+      console.error('Error loading data:', error);
+      setError(error instanceof Error ? error.message : 'Failed to load data');
+      setData([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [parseCSV]);
+
+  useEffect(() => {
+    loadData(isLargeDataset);
+  }, [isLargeDataset, loadData]);
+
+  const toggleDataset = useCallback(() => {
+    setIsLargeDataset(prev => !prev);
+  }, []);
+
+  // Memoize context value to prevent unnecessary rerenders
+  const value = useMemo(() => ({
+    data,
+    filters,
+    setFilters: memoizedSetFilters,
+    isLargeDataset,
+    toggleDataset,
+    loading,
+    error
+  }), [data, filters, memoizedSetFilters, isLargeDataset, toggleDataset, loading, error]);
+
+  return <DataContext.Provider value={value}>{children}</DataContext.Provider>;
 }; 

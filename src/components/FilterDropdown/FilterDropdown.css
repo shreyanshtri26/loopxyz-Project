@@ -1,19 +1,93 @@
 .filter-dropdown {
-  margin-bottom: 20px;
+  width: 100%;
+  margin-bottom: 10px;
 }
 
-.filter-dropdown h3 {
-  margin-bottom: 8px;
-  font-size: 16px;
-  font-weight: 600;
+.filter-dropdown label {
+  display: none; /* Hide labels since we're using h3 in the filter-section */
 }
 
-.filter-dropdown .optionContainer {
-  max-height: 300px;
-  overflow-y: auto;
+/* Amazon-style dropdown */
+.filter-select__control {
+  border: 1px solid #e0e0e0 !important;
+  border-radius: 4px !important;
+  min-height: 38px !important;
+  box-shadow: none !important;
+  background-color: #fff !important;
 }
 
-.filter-dropdown .searchBox {
-  margin-bottom: 8px;
-  padding: 8px;
+.filter-select__control:hover {
+  border-color: #f0c14b !important; /* Amazon yellow on hover */
+}
+
+.filter-select__control--is-focused {
+  border-color: #f0c14b !important; /* Amazon yellow when focused */
+  box-shadow: 0 0 0 1px #f0c14b !important;
+}
+
+.filter-select__menu {
+  border: 1px solid #e0e0e0 !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
+  z-index: 100 !important;
+}
+
+.filter-select__option {
+  padding: 8px 12px !important;
+  font-size: 14px !important;
+}
+
+.filter-select__option--is-focused {
+  background-color: #f5f5f5 !important;
+}
+
+.filter-select__option--is-selected {
+  background-color: #f0c14b !important; /* Amazon yellow for selected */
+  color: #000 !important;
+}
+
+.filter-select__option--is-disabled {
+  color: #cccccc !important;
+  cursor: not-allowed !important;
+}
+
+.filter-select__multi-value {
+  background-color: #fff8e1 !important; /* Light yellow background */
+  border-radius: 2px !important;
+  border: 1px solid #f0c14b !important;
+}
+
+.filter-select__multi-value__label {
+  color: #333 !important;
+  padding: 2px 6px !important;
+  font-size: 13px !important;
+}
+
+.filter-select__multi-value__remove {
+  color: #f0c14b !important;
+  padding: 0 4px !important;
+}
+
+.filter-select__multi-value__remove:hover {
+  background-color: #f0c14b !important;
+  color: white !important;
+}
+
+.filter-select__placeholder {
+  color: #999 !important;
+  font-size: 14px !important;
+}
+
+.filter-select__input {
+  color: #333 !important;
+}
+
+/* Style for the search box */
+.filter-select__input-container {
+  margin: 0 !important;
+  padding: 0 !important;
+  color: #333 !important;
+}
+
+.filter-select__value-container {
+  padding: 2px 8px !important;
 } 

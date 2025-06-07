@@ -1,119 +1,198 @@
 import React from 'react';
-import { render, screen, act } from '@testing-library/react';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import { DataProvider, useData } from './DataContext';
-import { DataRow } from '../types';
 
-// Mock the fetchCSV function
-jest.mock('../utils/csvParser', () => ({
-  fetchCSV: jest.fn().mockResolvedValue([
-    { number: '1', mod3: '1', mod4: '1', mod5: '1', mod6: '1' },
-    { number: '2', mod3: '2', mod4: '2', mod5: '2', mod6: '2' },
-    { number: '3', mod3: '0', mod4: '3', mod5: '3', mod6: '3' },
-    { number: '4', mod3: '1', mod4: '0', mod5: '4', mod6: '4' },
-    { number: '5', mod3: '2', mod4: '1', mod5: '0', mod6: '5' },
-    { number: '6', mod3: '0', mod4: '2', mod5: '1', mod6: '0' },
-  ]),
-}));
+// Mock fetch API
+const mockFetchData = (data: string) => {
+  return jest.fn(() =>
+    Promise.resolve({
+      text: () => Promise.resolve(data)
+    })
+  );
+};
 
-// Test component that uses the context
-const TestComponent = () => {
-  const { state, dispatch } = useData();
-  
-  const handleFilterChange = (column: string, value: string) => {
-    dispatch({
-      type: 'UPDATE_FILTER',
-      payload: {
-        column,
-        values: [value],
-      },
-    });
-  };
+// Set up initial mock
+global.fetch = mockFetchData('number,mod3,mod4,mod5,mod6\n1,1,1,1,1') as jest.Mock;
+
+// Test component to access context
+const TestConsumer = () => {
+  const { data, loading, isLargeDataset, toggleDataset, error } = useData();
   
   return (
     <div>
-      <div data-testid="data-length">{state.data.length}</div>
-      <div data-testid="filtered-data-length">{state.filteredData.length}</div>
-      <div data-testid="columns">{state.columns.join(',')}</div>
-      
-      <button 
-        data-testid="filter-mod3-1"
-        onClick={() => handleFilterChange('mod3', '1')}
-      >
-        Filter mod3=1
-      </button>
-      
-      <button 
-        data-testid="filter-mod4-2"
-        onClick={() => handleFilterChange('mod4', '2')}
-      >
-        Filter mod4=2
-      </button>
-      
-      <button 
-        data-testid="reset-filters"
-        onClick={() => dispatch({ type: 'RESET_FILTERS' })}
-      >
-        Reset Filters
-      </button>
+      <div data-testid="loading">{loading.toString()}</div>
+      <div data-testid="data-length">{data.length}</div>
+      <div data-testid="is-large">{isLargeDataset.toString()}</div>
+      <div data-testid="error">{error || 'no-error'}</div>
+      <button data-testid="toggle" onClick={toggleDataset}>Toggle</button>
     </div>
   );
 };
 
 describe('DataContext', () => {
-  test('loads data and initializes state', async () => {
-    render(
-      <DataProvider>
-        <TestComponent />
-      </DataProvider>
-    );
-    
-    // Wait for useEffect to run and load data
-    await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 0));
-    });
-    
-    // Should have 6 items in both data and filtered data initially
-    expect(screen.getByTestId('data-length').textContent).toBe('6');
-    expect(screen.getByTestId('filtered-data-length').textContent).toBe('6');
-    
-    // Should have all columns except 'number'
-    expect(screen.getByTestId('columns').textContent).toBe('mod3,mod4,mod5,mod6');
+  beforeEach(() => {
+    (global.fetch as jest.Mock).mockClear();
+    // Reset to default mock
+    global.fetch = mockFetchData('number,mod3,mod4,mod5,mod6\n1,1,1,1,1') as jest.Mock;
   });
-  
-  test('filters data correctly', async () => {
+
+  it('provides loading state initially', () => {
     render(
       <DataProvider>
-        <TestComponent />
+        <TestConsumer />
       </DataProvider>
     );
     
-    // Wait for useEffect to run and load data
-    await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 0));
+    expect(screen.getByTestId('loading').textContent).toBe('true');
+  });
+
+  it('loads data and sets loading to false', async () => {
+    render(
+      <DataProvider>
+        <TestConsumer />
+      </DataProvider>
+    );
+    
+    await waitFor(() => {
+      expect(screen.getByTestId('loading').textContent).toBe('false');
+      expect(screen.getByTestId('data-length').textContent).toBe('1');
     });
     
-    // Filter mod3=1
+    expect(global.fetch).toHaveBeenCalledWith('/data/dataset_small.csv');
+  });
+
+  it('toggles between datasets', async () => {
+    render(
+      <DataProvider>
+        <TestConsumer />
+      </DataProvider>
+    );
+    
+    // Wait for initial load
+    await waitFor(() => {
+      expect(screen.getByTestId('loading').textContent).toBe('false');
+    });
+    
+    // Toggle dataset
     act(() => {
-      screen.getByTestId('filter-mod3-1').click();
+      screen.getByTestId('toggle').click();
     });
     
-    // Should have 2 items after filtering
-    expect(screen.getByTestId('filtered-data-length').textContent).toBe('2');
+    // Check that isLargeDataset is now true
+    expect(screen.getByTestId('is-large').textContent).toBe('true');
     
-    // Reset filters
+    // Check that fetch was called with large dataset
+    await waitFor(() => {
+      expect(global.fetch).toHaveBeenCalledWith('/data/dataset_large.csv');
+    });
+  });
+
+  it('throws error when used outside provider', () => {
+    // Suppress console.error for this test
+    const originalError = console.error;
+    console.error = jest.fn();
+    
+    expect(() => {
+      render(<TestConsumer />);
+    }).toThrow('useData must be used within a DataProvider');
+    
+    // Restore console.error
+    console.error = originalError;
+  });
+
+  it('handles fetch errors correctly', async () => {
+    // Mock fetch to reject
+    global.fetch = jest.fn(() => Promise.reject(new Error('Network error'))) as jest.Mock;
+    
+    render(
+      <DataProvider>
+        <TestConsumer />
+      </DataProvider>
+    );
+    
+    await waitFor(() => {
+      expect(screen.getByTestId('loading').textContent).toBe('false');
+      expect(screen.getByTestId('error').textContent).not.toBe('no-error');
+    });
+    
+    // Data should be empty when fetch fails
+    expect(screen.getByTestId('data-length').textContent).toBe('0');
+  });
+
+  it('clears error when toggling dataset', async () => {
+    // First, setup fetch to fail
+    global.fetch = jest.fn(() => Promise.reject(new Error('Network error'))) as jest.Mock;
+    
+    render(
+      <DataProvider>
+        <TestConsumer />
+      </DataProvider>
+    );
+    
+    // Wait for the error to appear
+    await waitFor(() => {
+      expect(screen.getByTestId('error').textContent).not.toBe('no-error');
+    });
+    
+    // Now, setup fetch to succeed
+    global.fetch = mockFetchData('number,mod350,mod8000,mod20002\n1,1,1,1') as jest.Mock;
+    
+    // Toggle dataset
     act(() => {
-      screen.getByTestId('reset-filters').click();
+      screen.getByTestId('toggle').click();
     });
     
-    // Should be back to 6 items
-    expect(screen.getByTestId('filtered-data-length').textContent).toBe('6');
+    // Error should be cleared and data should be loaded
+    await waitFor(() => {
+      expect(screen.getByTestId('loading').textContent).toBe('false');
+      expect(screen.getByTestId('error').textContent).toBe('no-error');
+      expect(screen.getByTestId('data-length').textContent).toBe('1');
+    });
+  });
+
+  it('handles malformed CSV data', async () => {
+    // Mock fetch with malformed CSV
+    global.fetch = mockFetchData('malformed,csv\ndata,without,proper,columns') as jest.Mock;
     
-    // Filter mod4=2
+    render(
+      <DataProvider>
+        <TestConsumer />
+      </DataProvider>
+    );
+    
+    await waitFor(() => {
+      expect(screen.getByTestId('loading').textContent).toBe('false');
+    });
+    
+    // Should handle malformed data gracefully
+    expect(screen.getByTestId('data-length').textContent).not.toBe('0');
+  });
+
+  it('loads large dataset with correct columns', async () => {
+    // Setup mock for large dataset
+    global.fetch = mockFetchData('number,mod350,mod8000,mod20002\n1,1,1,1\n2,2,2,2') as jest.Mock;
+    
+    render(
+      <DataProvider>
+        <TestConsumer />
+      </DataProvider>
+    );
+    
+    // Wait for initial load to complete
+    await waitFor(() => {
+      expect(screen.getByTestId('loading').textContent).toBe('false');
+    });
+    
+    // Toggle to large dataset
     act(() => {
-      screen.getByTestId('filter-mod4-2').click();
+      screen.getByTestId('toggle').click();
     });
     
-    // Should have 2 items after filtering
-    expect(screen.getByTestId('filtered-data-length').textContent).toBe('2');
+    // Verify large dataset loaded correctly
+    await waitFor(() => {
+      expect(screen.getByTestId('loading').textContent).toBe('false');
+      expect(screen.getByTestId('data-length').textContent).toBe('2');
+      expect(screen.getByTestId('is-large').textContent).toBe('true');
+    });
   });
 }); 

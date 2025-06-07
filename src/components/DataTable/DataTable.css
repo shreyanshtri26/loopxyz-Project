@@ -1,33 +1,134 @@
 .data-table-container {
+  height: calc(100vh - 250px);
   width: 100%;
-  overflow-x: auto;
-  margin-top: 20px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  border-radius: 4px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background-color: #fff;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-.rdt_TableHeader {
-  background-color: #f8f9fa;
-  padding: 16px;
-  font-weight: bold;
+.table-header {
+  display: flex;
+  background-color: #f3f3f3;
+  border-bottom: 1px solid #ddd;
+  padding: 12px 0;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
-.rdt_TableHead {
-  font-weight: bold;
+.table-header-cell {
+  flex: 1;
+  padding: 0 15px;
+  text-align: left;
+  min-width: 100px;
+  color: #333;
+  font-size: 14px;
 }
 
-.rdt_TableCell {
-  padding: 16px;
+.table-row {
+  display: flex;
+  border-bottom: 1px solid #eee;
+  align-items: center;
+  transition: background-color 0.15s ease;
 }
 
-.rdt_Pagination {
-  border-top: 1px solid #e9ecef;
-  padding: 16px;
+.table-cell {
+  flex: 1;
+  padding: 10px 15px;
+  min-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  color: #444;
+}
+
+.table-row:nth-child(even) {
+  background-color: #fafafa;
+}
+
+.table-row:hover {
+  background-color: #f5f5f5;
 }
 
 .no-data {
-  padding: 24px;
+  padding: 30px;
   text-align: center;
-  color: #6c757d;
+  color: #666;
   font-style: italic;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+  margin: 20px 0;
+}
+
+.data-table-body {
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Hide scrollbars but allow scrolling */
+/* For Webkit browsers like Chrome/Safari/Edge */
+.data-table-body::-webkit-scrollbar,
+.data-table-container::-webkit-scrollbar,
+.data-table-body *::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  background: transparent;
+}
+
+/* For Firefox */
+.data-table-body,
+.data-table-container,
+.data-table-body * {
+  scrollbar-width: none;
+}
+
+/* For IE and Edge */
+.data-table-body,
+.data-table-container,
+.data-table-body * {
+  -ms-overflow-style: none;
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 15px;
+  background-color: #f3f3f3;
+  border-top: 1px solid #ddd;
+}
+
+.pagination-button {
+  padding: 8px 16px;
+  background-color: #f0c14b; /* Amazon yellow */
+  color: #111;
+  border: 1px solid #a88734;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+  font-weight: 500;
+}
+
+.pagination-button:hover:not(:disabled) {
+  background-color: #f4d078; /* Lighter yellow */
+  border-color: #a88734;
+}
+
+.pagination-button:disabled {
+  background-color: #f7f7f7;
+  color: #999;
+  border-color: #ddd;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  color: #555;
+  font-size: 14px;
 } 
