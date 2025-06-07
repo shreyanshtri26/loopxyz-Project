@@ -1,0 +1,33 @@
+.data-table-container {
+  width: 100%;
+  overflow-x: auto;
+  margin-top: 20px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+.rdt_TableHeader {
+  background-color: #f8f9fa;
+  padding: 16px;
+  font-weight: bold;
+}
+
+.rdt_TableHead {
+  font-weight: bold;
+}
+
+.rdt_TableCell {
+  padding: 16px;
+}
+
+.rdt_Pagination {
+  border-top: 1px solid #e9ecef;
+  padding: 16px;
+}
+
+.no-data {
+  padding: 24px;
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
+} 
