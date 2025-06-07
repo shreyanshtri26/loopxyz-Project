@@ -2,7 +2,7 @@ import React from 'react';
 import { render } from '@testing-library/react';
 import { DataTable } from './DataTable';
 import DataTableComponent from 'react-data-table-component';
-import { DataRow } from '../../types';
+import { SmallDataRow } from '../../types';
 
 // Mock react-data-table-component
 jest.mock('react-data-table-component', () => {
@@ -10,7 +10,7 @@ jest.mock('react-data-table-component', () => {
 });
 
 describe('DataTable', () => {
-  const mockData: DataRow[] = [
+  const mockData: SmallDataRow[] = [
     { number: 1, mod3: 1, mod4: 1, mod5: 1, mod6: 1 },
     { number: 2, mod3: 2, mod4: 2, mod5: 2, mod6: 2 },
   ];

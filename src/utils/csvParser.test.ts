@@ -1,5 +1,5 @@
 import { parseCSV, fetchCSV } from './csvParser';
-import { DataRow } from '../types';
+import { SmallDataRow } from '../types';
 
 // Mock fetch for testing fetchCSV
 global.fetch = jest.fn();
@@ -33,11 +33,11 @@ describe('csvParser', () => {
     });
 
     it('should convert all values to numbers', () => {
-      const csvString = 'number,mod3,mod4\n12.5,1.5,2.25';
+      const csvString = 'number,mod3,mod4,mod5,mod6\n12.5,1.5,2.25,3,4';
       const result = parseCSV(csvString);
       
       expect(result).toEqual([
-        { number: 12.5, mod3: 1.5, mod4: 2.25 }
+        { number: 12.5, mod3: 1.5, mod4: 2.25, mod5: 3, mod6: 4 }
       ]);
       
       // Check types
@@ -47,29 +47,29 @@ describe('csvParser', () => {
     });
     
     it('should handle CSV with spaces', () => {
-      const csvString = 'number, mod3, mod4\n 12, 0, 0';
+      const csvString = 'number, mod3, mod4, mod5, mod6\n 12, 0, 0, 0, 0';
       const result = parseCSV(csvString);
       
       expect(result).toEqual([
-        { number: 12, ' mod3': 0, ' mod4': 0 }
+        { number: 12, ' mod3': 0, ' mod4': 0, ' mod5': 0, ' mod6': 0 }
       ]);
     });
     
     it('should handle CSV with quoted values', () => {
-      const csvString = 'number,mod3,mod4\n"12","0","0"';
+      const csvString = 'number,mod3,mod4,mod5,mod6\n"12","0","0","0","0"';
       const result = parseCSV(csvString);
       
       expect(result).toEqual([
-        { number: 12, mod3: 0, mod4: 0 }
+        { number: 12, mod3: 0, mod4: 0, mod5: 0, mod6: 0 }
       ]);
     });
     
     it('should handle CSV with empty values', () => {
-      const csvString = 'number,mod3,mod4\n12,,0';
+      const csvString = 'number,mod3,mod4,mod5,mod6\n12,,0,0,0';
       const result = parseCSV(csvString);
       
       expect(result).toEqual([
-        { number: 12, mod3: NaN, mod4: 0 }
+        { number: 12, mod3: NaN, mod4: 0, mod5: 0, mod6: 0 }
       ]);
       
       // Check types - empty value should be NaN
@@ -77,11 +77,11 @@ describe('csvParser', () => {
     });
     
     it('should handle CSV with non-numeric values', () => {
-      const csvString = 'number,mod3,mod4\n12,abc,0';
+      const csvString = 'number,mod3,mod4,mod5,mod6\n12,abc,0,0,0';
       const result = parseCSV(csvString);
       
       expect(result).toEqual([
-        { number: 12, mod3: NaN, mod4: 0 }
+        { number: 12, mod3: NaN, mod4: 0, mod5: 0, mod6: 0 }
       ]);
       
       // Check types - non-numeric value should be NaN
@@ -89,58 +89,58 @@ describe('csvParser', () => {
     });
     
     it('should handle CSV with mixed line endings (CRLF, LF)', () => {
-      const csvString = 'number,mod3,mod4\r\n12,0,0\n24,0,0';
+      const csvString = 'number,mod3,mod4,mod5,mod6\r\n12,0,0,0,0\n24,0,0,0,0';
       const result = parseCSV(csvString);
       
       expect(result).toEqual([
-        { number: 12, mod3: 0, mod4: 0 },
-        { number: 24, mod3: 0, mod4: 0 }
+        { number: 12, mod3: 0, mod4: 0, mod5: 0, mod6: 0 },
+        { number: 24, mod3: 0, mod4: 0, mod5: 0, mod6: 0 }
       ]);
     });
     
     it('should handle CSV with negative numbers', () => {
-      const csvString = 'number,mod3,mod4\n-12,-3,-4';
+      const csvString = 'number,mod3,mod4,mod5,mod6\n-12,-3,-4,-5,-6';
       const result = parseCSV(csvString);
       
       expect(result).toEqual([
-        { number: -12, mod3: -3, mod4: -4 }
+        { number: -12, mod3: -3, mod4: -4, mod5: -5, mod6: -6 }
       ]);
     });
     
     it('should handle CSV with exponential notation', () => {
-      const csvString = 'number,mod3,mod4\n1e2,3e-1,4e+0';
+      const csvString = 'number,mod3,mod4,mod5,mod6\n1e2,3e-1,4e+0,5,6';
       const result = parseCSV(csvString);
       
       expect(result).toEqual([
-        { number: 100, mod3: 0.3, mod4: 4 }
+        { number: 100, mod3: 0.3, mod4: 4, mod5: 5, mod6: 6 }
       ]);
     });
     
     it('should handle CSV with varying number of columns', () => {
-      const csvString = 'number,mod3,mod4\n12,0\n24,0,0,extra';
+      const csvString = 'number,mod3,mod4,mod5,mod6\n12,0\n24,0,0,0,0,extra';
       const result = parseCSV(csvString);
       
       expect(result).toEqual([
-        { number: 12, mod3: 0, mod4: undefined },
-        { number: 24, mod3: 0, mod4: 0 }
+        { number: 12, mod3: 0, mod4: undefined, mod5: undefined, mod6: undefined },
+        { number: 24, mod3: 0, mod4: 0, mod5: 0, mod6: 0 }
       ]);
     });
     
     it('should trim whitespace from values but preserve headers as-is', () => {
-      const csvString = ' number , mod3 ,mod4\n 12 , 0 , 0 ';
+      const csvString = ' number , mod3 ,mod4,mod5,mod6\n 12 , 0 , 0 ,0,0';
       const result = parseCSV(csvString);
       
       expect(result).toEqual([
-        { ' number ': 12, ' mod3 ': 0, 'mod4': 0 }
+        { ' number ': 12, ' mod3 ': 0, 'mod4': 0, 'mod5': 0, 'mod6': 0 }
       ]);
     });
     
     it('should handle CSV with very large numbers', () => {
-      const csvString = 'number,mod3,mod4\n9007199254740991,9007199254740991,9007199254740991';
+      const csvString = 'number,mod3,mod4,mod5,mod6\n9007199254740991,9007199254740991,9007199254740991,9007199254740991,9007199254740991';
       const result = parseCSV(csvString);
       
       expect(result).toEqual([
-        { number: 9007199254740991, mod3: 9007199254740991, mod4: 9007199254740991 }
+        { number: 9007199254740991, mod3: 9007199254740991, mod4: 9007199254740991, mod5: 9007199254740991, mod6: 9007199254740991 }
       ]);
     });
   });
@@ -151,7 +151,7 @@ describe('csvParser', () => {
     });
 
     it('should fetch and parse CSV file', async () => {
-      const mockCsvText = 'number,mod3,mod4\n12,0,0\n24,0,0';
+      const mockCsvText = 'number,mod3,mod4,mod5,mod6\n12,0,0,0,0\n24,0,0,0,0';
       const mockResponse = { text: jest.fn().mockResolvedValue(mockCsvText) };
       (fetch as jest.Mock).mockResolvedValue(mockResponse);
 
@@ -159,8 +159,8 @@ describe('csvParser', () => {
       
       expect(fetch).toHaveBeenCalledWith('/data/test.csv');
       expect(result).toEqual([
-        { number: 12, mod3: 0, mod4: 0 },
-        { number: 24, mod3: 0, mod4: 0 }
+        { number: 12, mod3: 0, mod4: 0, mod5: 0, mod6: 0 },
+        { number: 24, mod3: 0, mod4: 0, mod5: 0, mod6: 0 }
       ]);
     });
 
@@ -179,7 +179,7 @@ describe('csvParser', () => {
     });
 
     it('should handle different file paths', async () => {
-      const mockCsvText = 'number,mod3,mod4\n12,0,0';
+      const mockCsvText = 'number,mod3,mod4,mod5,mod6\n12,0,0,0,0';
       const mockResponse = { text: jest.fn().mockResolvedValue(mockCsvText) };
       (fetch as jest.Mock).mockResolvedValue(mockResponse);
       
@@ -224,7 +224,7 @@ describe('csvParser', () => {
     });
     
     it('should handle CSV with only headers', async () => {
-      const mockResponse = { text: jest.fn().mockResolvedValue('number,mod3,mod4') };
+      const mockResponse = { text: jest.fn().mockResolvedValue('number,mod3,mod4,mod5,mod6') };
       (fetch as jest.Mock).mockResolvedValue(mockResponse);
       
       const result = await fetchCSV('/data/test.csv');

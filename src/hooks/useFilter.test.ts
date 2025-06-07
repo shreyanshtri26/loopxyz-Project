@@ -1,10 +1,10 @@
 import { renderHook } from '@testing-library/react';
 import { useFilter } from './useFilter';
-import { DataRow, FiltersState } from '../types';
+import { SmallDataRow, FiltersState } from '../types';
 
 describe('useFilter', () => {
   // Test data
-  const testData: DataRow[] = [
+  const testData: SmallDataRow[] = [
     { number: 1, mod3: 1, mod4: 1, mod5: 1, mod6: 1 },
     { number: 2, mod3: 2, mod4: 2, mod5: 2, mod6: 2 },
     { number: 3, mod3: 0, mod4: 3, mod5: 3, mod6: 3 },

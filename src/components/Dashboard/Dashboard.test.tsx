@@ -4,28 +4,28 @@ import { Dashboard } from './Dashboard';
 import { DataProvider } from '../../context/DataContext';
 import { useData } from '../../context/DataContext';
 import { useFilter } from '../../hooks/useFilter';
-import { DataRow } from '../../types';
+import { SmallDataRow } from '../../types';
 import { LoadingSpinner } from '../LoadingSpinner/LoadingSpinner';
 import { DataTable } from '../DataTable/DataTable';
 import { FilterDropdown } from '../FilterDropdown/FilterDropdown';
 
 // Mock the useData hook
-jest.mock('../../../context/DataContext', () => ({
-  ...jest.requireActual('../../../context/DataContext'),
+jest.mock('../../context/DataContext', () => ({
+  ...jest.requireActual('../../context/DataContext'),
   useData: jest.fn(),
 }));
 
 // Mock the useFilter hook
-jest.mock('../../../hooks/useFilter', () => ({
+jest.mock('../../hooks/useFilter', () => ({
   useFilter: jest.fn(),
 }));
 
 // Mock child components
-jest.mock('../../FilterDropdown/FilterDropdown', () => ({
+jest.mock('../FilterDropdown/FilterDropdown', () => ({
   FilterDropdown: jest.fn(() => <div data-testid="mock-filter-dropdown" />),
 }));
 
-jest.mock('../../DataTable/DataTable', () => ({
+jest.mock('../DataTable/DataTable', () => ({
   DataTable: jest.fn(({ data }) => (
     <div data-testid="mock-data-table">
       Showing {data.length} rows
@@ -33,13 +33,13 @@ jest.mock('../../DataTable/DataTable', () => ({
   )),
 }));
 
-jest.mock('../../LoadingSpinner/LoadingSpinner', () => ({
+jest.mock('../LoadingSpinner/LoadingSpinner', () => ({
   LoadingSpinner: jest.fn(() => <div data-testid="mock-loading-spinner" />),
 }));
 
 describe('Dashboard', () => {
   // Default mock data
-  const mockData: DataRow[] = [
+  const mockData: SmallDataRow[] = [
     { number: 1, mod3: 1, mod4: 1, mod5: 1, mod6: 1 },
     { number: 2, mod3: 2, mod4: 2, mod5: 2, mod6: 2 },
   ];

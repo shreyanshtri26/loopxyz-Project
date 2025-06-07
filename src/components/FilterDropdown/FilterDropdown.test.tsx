@@ -3,9 +3,15 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { FilterDropdown } from './FilterDropdown';
 import { Multiselect } from 'multiselect-react-dropdown';
 
-// Mock the multiselect-react-dropdown component
+// Create a mock implementation that captures the props
+let capturedProps: any = null;
+const mockedMultiselect = jest.fn((props) => {
+  capturedProps = props;
+  return <div data-testid="mock-multiselect">Mock Multiselect</div>;
+});
+
 jest.mock('multiselect-react-dropdown', () => ({
-  Multiselect: jest.fn(() => <div data-testid="mock-multiselect">Mock Multiselect</div>),
+  Multiselect: mockedMultiselect,
 }));
 
 describe('FilterDropdown', () => {
@@ -22,6 +28,7 @@ describe('FilterDropdown', () => {
   
   beforeEach(() => {
     jest.clearAllMocks();
+    capturedProps = null;
   });
   
   test('renders correctly', () => {
@@ -34,7 +41,7 @@ describe('FilterDropdown', () => {
   test('passes correct props to Multiselect', () => {
     render(<FilterDropdown {...mockProps} />);
     
-    expect(Multiselect).toHaveBeenCalledWith(
+    expect(mockedMultiselect).toHaveBeenCalledWith(
       expect.objectContaining({
         options: mockProps.columnOptions.available,
         selectedValues: mockProps.selectedValues,
@@ -48,8 +55,13 @@ describe('FilterDropdown', () => {
   test('handles selection changes', () => {
     render(<FilterDropdown {...mockProps} />);
     
-    const onSelectMock = (Multiselect as jest.Mock).mock.calls[0][0].onSelect;
-    onSelectMock(['value1', 'value2']);
+    // Ensure the mock was called and props were captured
+    expect(mockedMultiselect).toHaveBeenCalled();
+    expect(capturedProps).not.toBeNull();
+    expect(capturedProps.onSelect).toBeDefined();
+    
+    // Call the onSelect function with test values
+    capturedProps.onSelect(['value1', 'value2']);
     
     expect(mockProps.onChange).toHaveBeenCalledWith('testColumn', ['value1', 'value2']);
   });
@@ -57,8 +69,13 @@ describe('FilterDropdown', () => {
   test('handles value removal', () => {
     render(<FilterDropdown {...mockProps} />);
     
-    const onRemoveMock = (Multiselect as jest.Mock).mock.calls[0][0].onRemove;
-    onRemoveMock(['value1']);
+    // Ensure the mock was called and props were captured
+    expect(mockedMultiselect).toHaveBeenCalled();
+    expect(capturedProps).not.toBeNull();
+    expect(capturedProps.onRemove).toBeDefined();
+    
+    // Call the onRemove function with test values
+    capturedProps.onRemove(['value1']);
     
     expect(mockProps.onChange).toHaveBeenCalledWith('testColumn', []);
   });
