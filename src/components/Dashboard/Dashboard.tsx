@@ -66,7 +66,6 @@ export const Dashboard: React.FC = () => {
     <DataTable
       data={filteredData}
       pageSize={100}
-      virtualScrollSize={20}
       loading={loading}
     />
   ), [filteredData, loading]);

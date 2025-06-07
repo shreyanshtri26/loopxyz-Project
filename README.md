@@ -6,7 +6,8 @@ This project implements an interactive Business Intelligence dashboard featuring
 
 ### Data Visualization
 - **Interactive Data Table**: Displays filtered data with pagination (100 rows per page)
-- **Virtual Scrolling**: Shows only 20 entries at a time for optimal performance
+- **Fixed Header with Scrolling**: Shows 20 rows at a time with scrollable body
+- **Sortable Columns**: Click on column headers to sort data
 - **Real-time Updates**: Table reflects filter changes immediately
 
 ### Advanced Filtering System
@@ -32,8 +33,8 @@ This project implements an interactive Business Intelligence dashboard featuring
 - **React 18**: For building the user interface
 - **TypeScript**: For type safety and better developer experience
 - **Context API**: For global state management
-- **React Window**: For efficient virtual scrolling
-- **React Select**: For advanced dropdown capabilities
+- **React Data Table Component**: For efficient data table with built-in pagination
+- **Multiselect React Dropdown**: For advanced filtering capabilities
 - **CSS Modules**: For component-scoped styling
 - **Jest & React Testing Library**: For comprehensive testing
 

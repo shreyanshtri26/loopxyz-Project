@@ -44,7 +44,6 @@ export interface FilterDropdownProps {
 export interface DataTableProps {
   data: DataRow[];
   pageSize?: number;
-  virtualScrollSize?: number;
   loading?: boolean;
 }
 

@@ -1,20 +1,24 @@
 import React, { useMemo, useCallback } from 'react';
-import Select, { OptionProps } from 'react-select';
-import { FilterDropdownProps, FilterOption } from '../../types';
+import { Multiselect } from 'multiselect-react-dropdown';
+import { FilterDropdownProps } from '../../types';
 import './FilterDropdown.css';
 
-// Define a proper interface for the option with isAvailable property
-interface ExtendedFilterOption extends FilterOption {
-  isAvailable?: boolean;
-}
-
+/**
+ * FilterDropdown component that provides multi-select filtering functionality.
+ * Implementation details:
+ * - Uses multiselect-react-dropdown for efficient multiselect capabilities
+ * - Dynamically updates available options based on current filter state
+ * - Disabled options are shown but cannot be selected (maintains context)
+ * - Provides search functionality to quickly find values
+ * - Shows checkboxes for clear visual indication of selection state
+ */
 export const FilterDropdown: React.FC<FilterDropdownProps> = ({
   column,
   selectedValues,
   columnOptions,
   onChange
 }) => {
-  // Convert string[] to FilterOption[] with memoization
+  // Convert string[] to dropdown options with memoization
   const options = useMemo(() => {
     if (!columnOptions || !columnOptions.all) return [];
     
@@ -24,49 +28,49 @@ export const FilterDropdown: React.FC<FilterDropdownProps> = ({
     
     // Map all possible values to options, marking them as available or not
     return columnOptions.all.map(value => ({
-      label: value,
-      value: value,
-      // We'll handle this with the isOptionDisabled prop instead
-      isAvailable: availableSet.has(value) || selectedSet.has(value)
+      name: value,
+      id: value,
+      disabled: !(availableSet.has(value) || selectedSet.has(value))
     }));
   }, [columnOptions, selectedValues]);
 
-  // Selected values memoization
-  const selected = useMemo(() => {
+  // Selected options memoization
+  const selectedOptions = useMemo(() => {
     if (!selectedValues || selectedValues.length === 0) return [];
     
-    return selectedValues.map(value => ({
-      label: value,
-      value: value
-    }));
-  }, [selectedValues]);
+    return options.filter(option => selectedValues.includes(option.id));
+  }, [selectedValues, options]);
 
-  // Handle change with useCallback for performance
-  const handleChange = useCallback((selectedOptions: readonly FilterOption[] | null) => {
-    const newValues = selectedOptions ? selectedOptions.map(option => option.value) : [];
+  // Handle selection with useCallback for performance
+  const handleSelect = useCallback((selectedList: any[]) => {
+    const newValues = selectedList.map(item => item.id);
     onChange(column, newValues);
   }, [column, onChange]);
 
-  // Check if an option should be disabled
-  const isOptionDisabled = useCallback((option: ExtendedFilterOption) => {
-    return !option.isAvailable;
-  }, []);
+  // Handle removal with useCallback for performance
+  const handleRemove = useCallback((selectedList: any[]) => {
+    const newValues = selectedList.map(item => item.id);
+    onChange(column, newValues);
+  }, [column, onChange]);
 
   return (
     <div className="filter-dropdown">
-      <label htmlFor={`filter-${column}`}>{column}</label>
-      <Select
-        inputId={`filter-${column}`}
-        isMulti
+      <Multiselect
         options={options}
-        value={selected}
-        onChange={handleChange}
-        isSearchable={true}
-        isClearable={true}
+        selectedValues={selectedOptions}
+        onSelect={handleSelect}
+        onRemove={handleRemove}
+        displayValue="name"
         placeholder={`Select ${column}...`}
-        classNamePrefix="filter-select"
-        maxMenuHeight={300}
-        isOptionDisabled={isOptionDisabled}
+        emptyRecordMsg="No options available"
+        showCheckbox={true}
+        avoidHighlightFirstOption={true}
+        style={{
+          chips: { background: '#f0c14b' },
+          searchBox: { border: '1px solid #ddd', borderRadius: '4px', padding: '8px' },
+          inputField: { margin: '5px' },
+          optionContainer: { maxHeight: '300px' }
+        }}
       />
     </div>
   );
